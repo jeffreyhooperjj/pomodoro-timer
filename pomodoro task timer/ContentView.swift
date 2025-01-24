@@ -115,6 +115,7 @@ class CanvasViewModel: ObservableObject {
     @Published var x = 200 - 20
     @Published var y = 200 - 20
     @Published var rotation = 0
+    @Published var isMoving = false
     var width = 200
     var height = 200
     var dx: Int
@@ -128,6 +129,9 @@ class CanvasViewModel: ObservableObject {
     }
     
     func updateState(imgWidth: Int, imgHeight: Int) {
+        if !isMoving {
+            return
+        }
 //        print(x, y, stepAnimation)
         switch dir {
         case .left:
@@ -172,7 +176,7 @@ struct CanvasView: View {
     var cHeight = CGFloat(200)
     var img = Image("Image")
     var imgSize = CGFloat(20)
-    @StateObject var viewModel = CanvasViewModel()
+    @ObservedObject var viewModel: CanvasViewModel
     var body: some View {
         TimelineView(.periodic(from:Date(), by: 1.0)) { tCtx in
             Canvas {context, size in
@@ -202,12 +206,13 @@ struct ContentView: View {
     // constructing a task timer for 25 mins
     var time = 25 * 60
     @StateObject var timer = PomodoroTimer(breakTime: 5 * 60, taskTime: 25 * 60)
+    @StateObject var viewModel = CanvasViewModel()
 //    var pokemon = NSImage(named: "arceus.png")
 //    @StateObject var taskTimer = CountdownTimer(time: 25 * 60)
 //    @StateObject var breakTimer = CountdownTimer(time: 5 * 60)
     var body: some View {
         ZStack {
-            CanvasView()
+            CanvasView(viewModel: viewModel)
             VStack {
                 //            Image(systemName: "globe")
                 //                .imageScale(.large)
@@ -222,12 +227,17 @@ struct ContentView: View {
                 HStack {
                     Button("Start", action: {
                         timer.start()
+                        viewModel.isMoving = true
                     })
                     Button("Pause", action: {
                         timer.pause()
+                        viewModel.isMoving = false
                     })
                     Button("Reset", action: {
                         timer.reset()
+                        viewModel.isMoving = false
+                        viewModel.x = viewModel.width - 20
+                        viewModel.y = viewModel.height - 20
                     })
                 }
                 //            Text("is break time? \(String(timer.isBreakTime))")
